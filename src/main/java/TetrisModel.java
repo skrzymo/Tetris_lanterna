@@ -4,12 +4,14 @@ public class TetrisModel {
 
     private boolean gameOver = false;
     private boolean isStopped = true;
+    private boolean paused = false;
 
     private int score;
     private int level;
     private int speed;
     private int scoreLevel;
     private int clearedLines;
+    private int highscore;
 
     private final int gridCols = 20, gridRows = 24;
 
@@ -168,6 +170,7 @@ public class TetrisModel {
         this.nextBlock = blocks[(int) (Math.random() * 7)];
         this.score = 0;
         this.scoreLevel = 0;
+        this.highscore = 0;
         this.level = 0;
         this.speed = 600;
         this.clearedLinesAtOnce = 0;
@@ -212,6 +215,10 @@ public class TetrisModel {
         level = 0;
         clearedLines = 0;
         gameOver = false;
+        resetActualColumn();
+        resetActualRow();
+        actualBlock = blocks[(int) (Math.random() * 7)];
+        nextBlock = blocks[(int) (Math.random() * 7)];
     }
 
     public void moveLeft() {
@@ -423,4 +430,14 @@ public class TetrisModel {
     public int getClearedLines() {
         return clearedLines;
     }
+
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
 }

@@ -9,28 +9,37 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 
 import javax.sound.sampled.*;
-import java.io.File;
-import java.io.IOException;
+import java.awt.*;
+import java.io.*;
 
 import static java.lang.Thread.sleep;
 
-public class TetrisView {
+public class TetrisView extends Canvas {
 
-    private TetrisModel model = new TetrisModel();
-    private Terminal terminal = new DefaultTerminalFactory().createTerminal();
-    private Screen screen = new TerminalScreen(terminal);
-    private TextGraphics tg = screen.newTextGraphics();
-    private boolean keepRunning = true;
+    private TetrisModel model;
+    private Terminal terminal;
+    private Screen screen;
+    private TextGraphics tg;
+    private boolean keepRunning;
     private TextCharacter[][] savedScreen;
     private TextCharacter dot;
     private TextCharacter space;
 
+    private File fileScore;
+    private int highScore;
+
+
     private File file;
     private AudioInputStream sound;
     private Clip clip;
-
+    private boolean musicPlay;
 
     public TetrisView() throws IOException {
+        this.model = new TetrisModel();
+        this.terminal = new DefaultTerminalFactory().createTerminal();
+        this.screen = new TerminalScreen(this.terminal);
+        this.tg = this.screen.newTextGraphics();
+        this.keepRunning = true;
         this.savedScreen = new TextCharacter[screen.getTerminalSize().getRows()][screen.getTerminalSize().getColumns()];
         this.dot = new TextCharacter('.');
         this.space = new TextCharacter(' ');
@@ -42,6 +51,9 @@ public class TetrisView {
         } catch (UnsupportedAudioFileException | LineUnavailableException e) {
             e.printStackTrace();
         }
+
+        this.highScore = 0;
+        this.fileScore = new File("E:/Projekty/IntelliJ/Tetris/src/main/resources/Scores.txt");
     }
 
     private void clear() {
@@ -54,19 +66,24 @@ public class TetrisView {
 
     public void draw() throws IOException {
         clear();
-        if(!model.isGameOver()) {
-            if (!model.isStopped()) {
-                print(32,22, "Press BACKSPACE to SOUND ON/OFF");
-                print(32, 23, "Press ESC to go back to MAIN SCREEN");
-                drawLevel();
-                drawScore();
-                drawLines();
-                drawGrid();
-            } else {
+        if (!model.isPaused()) {
+            if(!model.isGameOver()) {
+                if (!model.isStopped()) {
+                    print(32, 21, "Press ENTER to PAUSE");
+                    print(32, 22, "Press BACKSPACE to SOUND ON/OFF");
+                    print(32, 23, "Press ESC to go back to MAIN SCREEN");
+                    drawLevel();
+                    drawScore();
+                    drawLines();
+                    drawGrid();
+                } else {
                 drawStartScreen();
+                }
+            } else {
+            drawGameOver();
             }
         } else {
-            drawGameOver();
+            drawPaused();
         }
     }
 
@@ -83,8 +100,8 @@ public class TetrisView {
         print(0, 10, "          []                                            []          ");
         print(0, 11, "          []                                            []          ");
         print(0, 12, "          []                                            []          ");
-        print(0, 13, "          []      Press ENTER to play. ESC to quit.     []          ");
-        print(0, 14, "          []                                            []          ");
+        print(0, 13, "          []             Press ENTER to play.           []          ");
+        print(0, 14, "          []         ESC to go back to main menu.       []          ");
         print(0, 15, "          []                                            []          ");
         print(0, 16, "          []                                            []          ");
         print(0, 17, "          []                                            []          ");
@@ -92,6 +109,33 @@ public class TetrisView {
         print(0, 19, "          []                                            []          ");
         print(0, 20, "          []                Skrzymo 2018                []          ");
         print(0, 21, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(fileScore));
+            String line = reader.readLine();
+            while (line != null)
+            {
+                try {
+                    highScore = Integer.parseInt(line.trim());
+                } catch (NumberFormatException e1) {
+                }
+                line = reader.readLine();
+            }
+            reader.close();
+
+        } catch (IOException ex) {
+            File yourFile = new File("E:/Projekty/IntelliJ/Tetris/src/main/resources/Scores.txt");
+            try {
+                yourFile.createNewFile(); // if file already exists will do nothing
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                FileOutputStream oFile = new FileOutputStream(yourFile, false);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        print(27, 10, "HIGH SCORE:  " + highScore);
     }
 
     private void drawScore() {
@@ -552,6 +596,61 @@ public class TetrisView {
     }
 
     public void drawGameOver() {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(fileScore));
+            String line = reader.readLine();
+            while (line != null)
+            {
+                try {
+                    highScore = Integer.parseInt(line.trim());
+                    if (model.getScore() > highScore)
+                    {
+                        highScore = model.getScore();
+                    }
+                } catch (NumberFormatException e1) {
+                }
+                line = reader.readLine();
+            }
+            reader.close();
+
+        } catch (IOException ex) {
+            System.err.println("ERROR reading scores from file");
+        }
+        System.out.println(highScore);
+        try {
+            BufferedWriter output = new BufferedWriter(new FileWriter(fileScore));
+            output.write(Integer.toString(highScore));
+            output.close();
+
+        } catch (IOException ex1) {
+            System.out.printf("ERROR writing score to file: %s\n", ex1);
+        }
+        print(0, 1, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
+        print(0, 2, "          []                                            []          ");
+        print(0, 3, "          []                                            []          ");
+        print(0, 4, "          /\\__  _\\/\\  ___\\/\\__  _\\/\\  == \\ /\\ \\ /\\  ___\\[]          ");
+        print(0, 5, "          \\/_/\\ \\/\\ \\  ___\\/_/\\ \\/\\ \\  __<_\\ \\ \\. \\___  \\]          ");
+        print(0, 6, "          [] \\ \\_\\ \\ \\_____\\ \\ \\_\\ \\ \\_\\_\\_\\. \\_\\./\\_____\\          ");
+        print(0, 7, "          []  \\/_/  \\/_____/  \\/_/  \\/_/ /_/ \\/_/ \\/_____/          ");
+        print(0, 8, "          []                                            []          ");
+        print(0, 9, "          []                   GAME OVER                []          ");
+        print(0, 10, "          []                                            []          ");
+        print(0, 11, "          []                                            []          ");
+        print(0, 12, "          []                                            []          ");
+        print(0, 13, "          []                                            []          ");
+        print(0, 14, "          []                                            []          ");
+        print(0, 15, "          []          Press ENTER to play again.        []          ");
+        print(0, 16, "          []         ESC to go back to main menu.       []          ");
+        print(0, 17, "          []                                            []          ");
+        print(0, 18, "          []                                            []          ");
+        print(0, 19, "          []                                            []          ");
+        print(0, 20, "          []                Skrzymo 2018                []          ");
+        print(0, 21, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
+        print(24,11, "YOUR SCORE:    " + model.getScore());
+        print(24,13, "HIGH SCORE:    " + highScore);
+    }
+
+    public void drawPaused() throws IOException {
         print(0, 1, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
         print(0, 2, "          []                                            []          ");
         print(0, 3, "          []                                            []          ");
@@ -562,44 +661,82 @@ public class TetrisView {
         print(0, 8, "          []                                            []          ");
         print(0, 9, "          []                                            []          ");
         print(0, 10, "          []                                            []          ");
-        print(0, 11, "          []                  GAME OVER                 []          ");
+        print(0, 11, "          []                   PAUSED                   []          ");
         print(0, 12, "          []                                            []          ");
         print(0, 13, "          []                                            []          ");
         print(0, 14, "          []                                            []          ");
-        print(0, 15, "          []   Press ENTER to play again. ESC to quit.  []          ");
+        print(0, 15, "          []            Press ENTER to resume.          []          ");
         print(0, 16, "          []                                            []          ");
         print(0, 17, "          []                                            []          ");
         print(0, 18, "          []                                            []          ");
         print(0, 19, "          []                                            []          ");
         print(0, 20, "          []                Skrzymo 2018                []          ");
         print(0, 21, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
-        print(24,13, "YOUR SCORE:    " + model.getScore());
+        screen.refresh();
+        try {
+            sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        print(0, 1, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
+        print(0, 2, "          []                                            []          ");
+        print(0, 3, "          []                                            []          ");
+        print(0, 4, "          /\\__  _\\/\\  ___\\/\\__  _\\/\\  == \\ /\\ \\ /\\  ___\\[]          ");
+        print(0, 5, "          \\/_/\\ \\/\\ \\  ___\\/_/\\ \\/\\ \\  __<_\\ \\ \\. \\___  \\]          ");
+        print(0, 6, "          [] \\ \\_\\ \\ \\_____\\ \\ \\_\\ \\ \\_\\_\\_\\. \\_\\./\\_____\\          ");
+        print(0, 7, "          []  \\/_/  \\/_____/  \\/_/  \\/_/ /_/ \\/_/ \\/_____/          ");
+        print(0, 8, "          []                                            []          ");
+        print(0, 9, "          []                                            []          ");
+        print(0, 10, "          []                                            []          ");
+        print(0, 11, "          []                                            []          ");
+        print(0, 12, "          []                                            []          ");
+        print(0, 13, "          []                                            []          ");
+        print(0, 14, "          []                                            []          ");
+        print(0, 15, "          []            Press ENTER to resume.          []          ");
+        print(0, 16, "          []                                            []          ");
+        print(0, 17, "          []                                            []          ");
+        print(0, 18, "          []                                            []          ");
+        print(0, 19, "          []                                            []          ");
+        print(0, 20, "          []                Skrzymo 2018                []          ");
+        print(0, 21, "          [][][][][][][][][][][][][][][][][][][][][][][][]          ");
     }
-
-
 
     public void keyPressed() throws IOException {
         KeyStroke keyPressed = terminal.pollInput();
         if(keyPressed != null) {
             switch (keyPressed.getKeyType()) {
                 case Escape:
-                    if (model.isStopped() || model.isGameOver()) {
-                        stop();
-                        close();
-                        System.exit(0);
+                    if(model.isPaused()) {
+                        break;
+                    }
+                    if(model.isStopped() || model.isGameOver()) {
+                        keepRunning = false;
                     } else {
                         model.setStopped(true);
                         stop();
                     }
                     break;
                 case Enter:
+                    if(!model.isStopped() && !model.isPaused()) {
+                        model.setPaused(true);
+                        stop();
+                    } else if(!model.isStopped() && model.isPaused()) {
+                        model.setPaused(false);
+                        if(musicPlay) {
+                            loop();
+                            play();
+                        }
+                    }
+
                     if(model.isStopped() || model.isGameOver()) {
                         model.setStopped(false);
                         model.setGameOver(false);
+                        model.setPaused(false);
                         model.start();
                         savedScreen[0][0] = null;
                         loop();
                         play();
+                        setMusicPlay(true);
                     }
                     break;
                 case ArrowRight:
@@ -618,9 +755,11 @@ public class TetrisView {
                     if(!model.isStopped()) {
                         if (clip.isRunning()) {
                             stop();
+                            setMusicPlay(false);
                         } else {
                             loop();
                             play();
+                            setMusicPlay(true);
                         }
                     }
                     break;
@@ -720,26 +859,31 @@ public class TetrisView {
         clip.close();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        TetrisView view = new TetrisView();
+    public void setMusicPlay(boolean musicPlay) {
+        this.musicPlay = musicPlay;
+    }
 
-
-        view.terminal.enterPrivateMode();
-        view.tg.setForegroundColor(new TextColor.RGB(153,255,153));
-        view.screen.startScreen();
-        view.screen.refresh();
-        while (view.keepRunning){
-            view.draw();
-            view.screen.refresh();
-            if(view.model.getScoreLevel() >= 1000) {
-                view.model.increaseSpeed();
-                view.model.increaseLevel();
-                view.model.setScoreLevel(view.model.getScoreLevel() % 1000);
+    public void run() throws IOException, InterruptedException {
+        this.terminal.enterPrivateMode();
+        System.out.println(this.terminal.getTerminalSize());
+        this.tg.setForegroundColor(new TextColor.RGB(153,255,153));
+        this.screen.startScreen();
+        this.screen.refresh();
+        while (keepRunning){
+            draw();
+            this.screen.refresh();
+            if(this.model.getScoreLevel() >= 1000) {
+                this.model.increaseSpeed();
+                this.model.increaseLevel();
+                this.model.setScoreLevel(this.model.getScoreLevel() % 1000);
             }
-            sleep(view.model.getSpeed());
-            view.keyPressed();
+            sleep(this.model.getSpeed());
+            keyPressed();
         }
-
-        view.terminal.exitPrivateMode();
+        Menu menu = new Menu();
+        menu.running();
+        terminal.close();
+        this.terminal.exitPrivateMode();
+        //System.exit(0);
     }
 }

@@ -1,9 +1,8 @@
 import javax.swing.*;
-import java.io.IOException;
 
 public class Tetris extends JComponent {
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
 
         Menu menu = new Menu();
         menu.running();

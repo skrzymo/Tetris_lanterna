@@ -66,9 +66,10 @@ public class TetrisView extends Canvas {
 
     public void draw() throws IOException {
         clear();
-        if (!model.isPaused()) {
-            if(!model.isGameOver()) {
-                if (!model.isStopped()) {
+        if (!model.isStopped()) {
+            if (!model.isPaused()) {
+                if(!model.isGameOver()) {
+
                     print(32, 21, "Press ENTER to PAUSE");
                     print(32, 22, "Press BACKSPACE to SOUND ON/OFF");
                     print(32, 23, "Press ESC to go back to MAIN SCREEN");
@@ -76,14 +77,15 @@ public class TetrisView extends Canvas {
                     drawScore();
                     drawLines();
                     drawGrid();
+
                 } else {
-                drawStartScreen();
+                    drawGameOver();
                 }
             } else {
-            drawGameOver();
+                drawPaused();
             }
         } else {
-            drawPaused();
+            drawStartScreen();
         }
     }
 
@@ -616,7 +618,6 @@ public class TetrisView extends Canvas {
         } catch (IOException ex) {
             System.err.println("ERROR reading scores from file");
         }
-        System.out.println(highScore);
         try {
             BufferedWriter output = new BufferedWriter(new FileWriter(fileScore));
             output.write(Integer.toString(highScore));
@@ -707,7 +708,7 @@ public class TetrisView extends Canvas {
             switch (keyPressed.getKeyType()) {
                 case Escape:
                     if(model.isPaused()) {
-                        break;
+                        model.setStopped(true);
                     }
                     if(model.isStopped() || model.isGameOver()) {
                         keepRunning = false;
@@ -865,11 +866,10 @@ public class TetrisView extends Canvas {
 
     public void run() throws IOException, InterruptedException {
         this.terminal.enterPrivateMode();
-        System.out.println(this.terminal.getTerminalSize());
         this.tg.setForegroundColor(new TextColor.RGB(153,255,153));
         this.screen.startScreen();
         this.screen.refresh();
-        while (keepRunning){
+        while(keepRunning){
             draw();
             this.screen.refresh();
             if(this.model.getScoreLevel() >= 1000) {
@@ -882,8 +882,8 @@ public class TetrisView extends Canvas {
         }
         Menu menu = new Menu();
         menu.running();
-        terminal.close();
         this.terminal.exitPrivateMode();
-        //System.exit(0);
+        this.terminal.close();
+
     }
 }

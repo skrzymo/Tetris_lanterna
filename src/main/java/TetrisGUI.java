@@ -105,11 +105,11 @@ public class TetrisGUI extends JFrame {
 
     public void run() {
         start = true;
-        KeyInput.update();
-        while (start) {
+        KeyInput.clear();
+        while(start) {
             key();
-            board.repaint();
             side.repaint();
+            board.repaint();
             try {
                 if(paused) {
                     sleep(600);
@@ -124,6 +124,7 @@ public class TetrisGUI extends JFrame {
         if(board.isFull()) {
             TetrisGUIMain.INSTANCE.setScore(side.getScore());
             TetrisGUIMain.INSTANCE.setGameOver(true);
+            stop();
         }
         TetrisGUIMain.INSTANCE.setVisible(true);
         this.dispose();

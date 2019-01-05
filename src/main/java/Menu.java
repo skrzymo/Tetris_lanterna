@@ -167,6 +167,7 @@ public class Menu extends Canvas implements Runnable {
             case 0:
                 Menu.INSTANCE.stop();
                 frame.dispose();
+                KeyInput.clear();
                 try {
                     TetrisView tv = new TetrisView();
                     tv.run();

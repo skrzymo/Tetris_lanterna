@@ -73,7 +73,7 @@ public class TetrisGUIMain extends JFrame {
 
     public void run() {
         running = true;
-        KeyInput.update();
+        KeyInput.clear();
         Graphics g = this.getGraphics();
         while(running) {
             if(!isImage) {
